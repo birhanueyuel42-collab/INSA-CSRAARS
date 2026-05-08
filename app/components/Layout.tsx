@@ -33,26 +33,34 @@ const MAIN_NAV: NavItem[] = [
   },
   {
     type: "group",
-    name: "Risk Management",
-    icon: <HiOutlineShieldExclamation className="w-5 h-5" />,
-    items: [
-      { name: "Risk Treatment", href: "/risk-treatment" },
-      { name: "Risk Matrix", href: "/risk-matrix" },
-      { name: "Risk Register", href: "/risks" },
-      { name: "Assignments", href: "/assignments" },
-    ],
-  },
-  {
-    type: "group",
     name: "Assessment & Analysis",
     icon: <MdOutlineAssessment className="w-5 h-5" />,
     items: [
-      { name: "Assessment", href: "/questionnaires" },
+      { name: "Questionnaires", href: "/questionnaires" },
       { name: "Risk Evaluation", href: "/risk-evaluation" },
+      { name: "Risk Matrix", href: "/risk-matrix" },
       { name: "CVSS Dashboard", href: "/cvss-dashboard" },
       { name: "ALE Analysis", href: "/ale-analysis" },
       { name: "Trend Analysis", href: "/trends" },
     ],
+  },
+  {
+    type: "single",
+    name: "Risk Register",
+    href: "/risks",
+    icon: <HiOutlineShieldExclamation className="w-5 h-5" />,
+  },
+  {
+    type: "single",
+    name: "Risk Treatment",
+    href: "/risk-treatment",
+    icon: <HiOutlineShieldExclamation className="w-5 h-5" />,
+  },
+  {
+    type: "single",
+    name: "Assignments",
+    href: "/assignments",
+    icon: <MdOutlineInventory2 className="w-5 h-5" />,
   },
   {
     type: "single",

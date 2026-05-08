@@ -108,7 +108,7 @@ export default function RiskMatrixPage() {
           {/* Selector */}
           <div className="mb-6">
             <h3 className="text-lg font-bold text-white mb-4">
-               Select Assessment
+              Select Assessment
             </h3>
             <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
               <div className="flex-1">
@@ -210,8 +210,12 @@ export default function RiskMatrixPage() {
                     Severity of impact if risk occurs (1-5 scale)
                   </p>
                   <p>
-                    • <span className="font-medium">Cell values:</span> Number
-                    of questions in that likelihood/impact combination
+                    • <span className="font-medium">Risk Score:</span> Large
+                    number in each cell = Likelihood × Impact (1-25 scale)
+                  </p>
+                  <p>
+                    • <span className="font-medium">Count:</span> Number in
+                    parentheses = number of questions in that cell
                   </p>
                 </div>
               </div>

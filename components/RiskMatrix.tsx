@@ -33,10 +33,7 @@ const RiskMatrix: React.FC<RiskMatrixProps> = ({ data }) => {
   };
 
   const getCellOpacity = (count: number): string => {
-    if (count === 0) return 'opacity-20';
-    if (count <= 2) return 'opacity-40';
-    if (count <= 5) return 'opacity-60';
-    if (count <= 10) return 'opacity-80';
+    if (count === 0) return 'opacity-50';
     return 'opacity-100';
   };
 
@@ -65,19 +62,24 @@ const RiskMatrix: React.FC<RiskMatrixProps> = ({ data }) => {
             {row.map((count, colIndex) => {
               const likelihood = colIndex + 1;
               const impact = 5 - rowIndex;
+              const riskScore = likelihood * impact;
               const colorClass = getColor(likelihood, impact);
               const opacityClass = getCellOpacity(count);
 
               return (
                 <div
                   key={`cell-${rowIndex}-${colIndex}`}
-                  className={`h-12 ${colorClass} ${opacityClass} rounded flex items-center justify-center border border-slate-700 relative`}
+                  className={`h-12 ${colorClass} ${opacityClass} rounded flex flex-col items-center justify-center border border-slate-700 relative`}
                 >
+                  {/* Risk Score (always shown) */}
+                  <div className="text-[10px] font-bold text-white/90">
+                    {riskScore}
+                  </div>
+
+                  {/* Count (only if > 0) */}
                   {count > 0 && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center text-xs font-bold text-slate-900">
-                        {count}
-                      </div>
+                    <div className="text-xs font-semibold text-white bg-slate-900/60 px-1.5 py-0.5 rounded mt-0.5">
+                      ({count})
                     </div>
                   )}
                 </div>

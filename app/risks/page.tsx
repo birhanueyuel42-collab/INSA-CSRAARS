@@ -117,35 +117,35 @@ export default function RiskRegisterFromAssessmentsPage() {
 
   // ── Column visibility ──────────────────────────────────────────────────────
   const ALL_COLUMNS = [
-    { key: "riskId",        label: "Risk ID" },
-    { key: "riskName",      label: "Risk Name" },
-    { key: "status",        label: "Status" },
-    { key: "riskType",      label: "Risk/Issue" },
-    { key: "threatOpp",     label: "Threat/Opp" },
-    { key: "assignedTo",    label: "Assigned To" },
-    { key: "company",       label: "Company" },
-    { key: "category",      label: "Category" },
-    { key: "date",          label: "Date" },
-    { key: "level",         label: "Level" },
-    { key: "preProb",       label: "Pre-Prob%" },
-    { key: "preImpact",     label: "Pre-Impact%" },
-    { key: "preScore",      label: "Pre-Score%" },
-    { key: "preCost",       label: "Pre-Cost$" },
-    { key: "likelihood",    label: "Likelihood" },
-    { key: "impact",        label: "Impact" },
-    { key: "riskScore",     label: "Risk Score" },
-    { key: "riskLevel",     label: "Risk Level" },
-    { key: "postProb",      label: "Post-Prob%" },
-    { key: "postImpact",    label: "Post-Impact%" },
-    { key: "postScore",     label: "Post-Score%" },
-    { key: "postCost",      label: "Post-Cost$" },
-    { key: "mitigCost",     label: "Mitigation Cost$" },
-    { key: "gap",           label: "Gap" },
-    { key: "threat",        label: "Threat" },
-    { key: "mitigation",    label: "Mitigation" },
-    { key: "description",   label: "Description" },
-    { key: "impactLabel",   label: "Impact Label" },
-    { key: "impactDesc",    label: "Impact Description" },
+    { key: "riskId", label: "Risk ID" },
+    { key: "riskName", label: "Risk Name" },
+    { key: "status", label: "Status" },
+    { key: "riskType", label: "Risk/Issue" },
+    { key: "threatOpp", label: "Threat/Opp" },
+    { key: "assignedTo", label: "Assigned To" },
+    { key: "company", label: "Company" },
+    { key: "category", label: "Category" },
+    { key: "date", label: "Date" },
+    { key: "level", label: "Level" },
+    { key: "preProb", label: "Pre-Prob%" },
+    { key: "preImpact", label: "Pre-Impact%" },
+    { key: "preScore", label: "Pre-Score%" },
+    { key: "preCost", label: "Pre-Cost$" },
+    { key: "likelihood", label: "Likelihood" },
+    { key: "impact", label: "Impact" },
+    { key: "riskScore", label: "Risk Score" },
+    { key: "riskLevel", label: "Risk Level" },
+    { key: "postProb", label: "Post-Prob%" },
+    { key: "postImpact", label: "Post-Impact%" },
+    { key: "postScore", label: "Post-Score%" },
+    { key: "postCost", label: "Post-Cost$" },
+    { key: "mitigCost", label: "Mitigation Cost$" },
+    { key: "gap", label: "Gap" },
+    { key: "threat", label: "Threat" },
+    { key: "mitigation", label: "Mitigation" },
+    { key: "description", label: "Description" },
+    { key: "impactLabel", label: "Impact Label" },
+    { key: "impactDesc", label: "Impact Description" },
   ] as const;
   type ColKey = typeof ALL_COLUMNS[number]["key"];
   const [visibleCols, setVisibleCols] = useState<Set<ColKey>>(new Set([
@@ -467,11 +467,9 @@ export default function RiskRegisterFromAssessmentsPage() {
                 className="w-full px-2 py-1 bg-slate-900 border border-slate-700 rounded text-white text-sm"
               >
                 <option value="">All</option>
-                {availableCategories.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
+                <option value="operational">Operational</option>
+                <option value="tactical">Tactical</option>
+                <option value="strategic">Strategic</option>
               </select>
             </div>
 
@@ -567,35 +565,35 @@ export default function RiskRegisterFromAssessmentsPage() {
             <table className="min-w-full text-xs text-left border-collapse text-slate-100">
               <thead>
                 <tr className="border-b border-slate-700">
-                  {show("riskId")      && <th className="py-2 pr-3">Risk ID</th>}
-                  {show("riskName")    && <th className="py-2 pr-3">Risk Name</th>}
-                  {show("status")      && <th className="py-2 pr-3">Status</th>}
-                  {show("riskType")    && <th className="py-2 pr-3">Risk/Issue</th>}
-                  {show("threatOpp")   && <th className="py-2 pr-3">Threat/Opp</th>}
-                  {show("assignedTo")  && <th className="py-2 pr-3">Assigned To</th>}
-                  {show("company")     && <th className="py-2 pr-3">Company</th>}
-                  {show("category")    && <th className="py-2 pr-3">Category</th>}
-                  {show("date")        && <th className="py-2 pr-3">Date</th>}
-                  {show("level")       && <th className="py-2 pr-3">Level</th>}
-                  {show("preProb")     && <th className="py-2 pr-3 bg-orange-900/20">Pre-Prob%</th>}
-                  {show("preImpact")   && <th className="py-2 pr-3 bg-orange-900/20">Pre-Impact%</th>}
-                  {show("preScore")    && <th className="py-2 pr-3 bg-orange-900/20">Pre-Score%</th>}
-                  {show("preCost")     && <th className="py-2 pr-3 bg-orange-900/20">Pre-Cost$</th>}
-                  {show("likelihood")  && <th className="py-2 pr-3">Likelihood</th>}
-                  {show("impact")      && <th className="py-2 pr-3">Impact</th>}
-                  {show("riskScore")   && <th className="py-2 pr-3">Risk Score</th>}
-                  {show("riskLevel")   && <th className="py-2 pr-3">Risk Level</th>}
-                  {show("postProb")    && <th className="py-2 pr-3 bg-green-900/20">Post-Prob%</th>}
-                  {show("postImpact")  && <th className="py-2 pr-3 bg-green-900/20">Post-Impact%</th>}
-                  {show("postScore")   && <th className="py-2 pr-3 bg-green-900/20">Post-Score%</th>}
-                  {show("postCost")    && <th className="py-2 pr-3 bg-green-900/20">Post-Cost$</th>}
-                  {show("mitigCost")   && <th className="py-2 pr-3">Mitigation Cost$</th>}
-                  {show("gap")         && <th className="py-2 pr-3">Gap</th>}
-                  {show("threat")      && <th className="py-2 pr-3">Threat</th>}
-                  {show("mitigation")  && <th className="py-2 pr-3">Mitigation</th>}
+                  {show("riskId") && <th className="py-2 pr-3">Risk ID</th>}
+                  {show("riskName") && <th className="py-2 pr-3">Risk Name</th>}
+                  {show("status") && <th className="py-2 pr-3">Status</th>}
+                  {show("riskType") && <th className="py-2 pr-3">Risk/Issue</th>}
+                  {show("threatOpp") && <th className="py-2 pr-3">Threat/Opp</th>}
+                  {show("assignedTo") && <th className="py-2 pr-3">Assigned To</th>}
+                  {show("company") && <th className="py-2 pr-3">Company</th>}
+                  {show("category") && <th className="py-2 pr-3">Category</th>}
+                  {show("date") && <th className="py-2 pr-3">Date</th>}
+                  {show("level") && <th className="py-2 pr-3">Level</th>}
+                  {show("preProb") && <th className="py-2 pr-3 bg-orange-900/20">Pre-Prob%</th>}
+                  {show("preImpact") && <th className="py-2 pr-3 bg-orange-900/20">Pre-Impact%</th>}
+                  {show("preScore") && <th className="py-2 pr-3 bg-orange-900/20">Pre-Score%</th>}
+                  {show("preCost") && <th className="py-2 pr-3 bg-orange-900/20">Pre-Cost$</th>}
+                  {show("likelihood") && <th className="py-2 pr-3">Likelihood</th>}
+                  {show("impact") && <th className="py-2 pr-3">Impact</th>}
+                  {show("riskScore") && <th className="py-2 pr-3">Risk Score</th>}
+                  {show("riskLevel") && <th className="py-2 pr-3">Risk Level</th>}
+                  {show("postProb") && <th className="py-2 pr-3 bg-green-900/20">Post-Prob%</th>}
+                  {show("postImpact") && <th className="py-2 pr-3 bg-green-900/20">Post-Impact%</th>}
+                  {show("postScore") && <th className="py-2 pr-3 bg-green-900/20">Post-Score%</th>}
+                  {show("postCost") && <th className="py-2 pr-3 bg-green-900/20">Post-Cost$</th>}
+                  {show("mitigCost") && <th className="py-2 pr-3">Mitigation Cost$</th>}
+                  {show("gap") && <th className="py-2 pr-3">Gap</th>}
+                  {show("threat") && <th className="py-2 pr-3">Threat</th>}
+                  {show("mitigation") && <th className="py-2 pr-3">Mitigation</th>}
                   {show("description") && <th className="py-2 pr-3">Description</th>}
                   {show("impactLabel") && <th className="py-2 pr-3">Impact Label</th>}
-                  {show("impactDesc")  && <th className="py-2 pr-3">Impact Description</th>}
+                  {show("impactDesc") && <th className="py-2 pr-3">Impact Description</th>}
                   <th className="py-2 pr-3">Actions</th>
                 </tr>
               </thead>
@@ -604,35 +602,35 @@ export default function RiskRegisterFromAssessmentsPage() {
                   const isEditing = editing && editing.analysisId === r.analysisId && editing.questionId === r.questionId && editing.level === r.level;
                   return (
                     <tr key={`${r.analysisId}-${r.questionId}-${idx}`} className="border-b border-slate-700 last:border-b-0">
-                      {showTd("riskId")      && <td className="py-2 pr-3 font-mono text-emerald-400">{r.riskRegisterId}</td>}
-                      {showTd("riskName")    && <td className="py-2 pr-3">{isEditing ? <input type="text" value={editing.riskName} onChange={e => setEditing(p => p ? {...p, riskName: e.target.value} : p)} className="w-40 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white" /> : (r.riskName || '-')}</td>}
-                      {showTd("status")      && <td className="py-2 pr-3">{isEditing ? <select value={editing.status} onChange={e => setEditing(p => p ? {...p, status: e.target.value as 'Open'|'Closed'} : p)} className="w-24 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"><option value="Open">Open</option><option value="Closed">Closed</option></select> : <span className={`px-2 py-0.5 rounded text-xs font-semibold ${r.status === 'Open' ? 'bg-yellow-400 text-yellow-900' : 'bg-green-400 text-green-900'}`}>{r.status || 'Open'}</span>}</td>}
-                      {showTd("riskType")    && <td className="py-2 pr-3">{isEditing ? <select value={editing.riskType} onChange={e => setEditing(p => p ? {...p, riskType: e.target.value as 'Risk'|'Issue'} : p)} className="w-24 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"><option value="Risk">Risk</option><option value="Issue">Issue</option></select> : (r.riskType || 'Risk')}</td>}
-                      {showTd("threatOpp")   && <td className="py-2 pr-3">{isEditing ? <select value={editing.threatOpportunity} onChange={e => setEditing(p => p ? {...p, threatOpportunity: e.target.value as 'Threat'|'Opportunity'} : p)} className="w-28 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"><option value="Threat">Threat</option><option value="Opportunity">Opportunity</option></select> : (r.threatOpportunity || 'Threat')}</td>}
-                      {showTd("assignedTo")  && <td className="py-2 pr-3">{isEditing ? <input type="text" value={editing.assignedTo} onChange={e => setEditing(p => p ? {...p, assignedTo: e.target.value} : p)} className="w-32 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white" /> : (r.assignedTo || '-')}</td>}
-                      {showTd("company")     && <td className="py-2 pr-3">{r.company}</td>}
-                      {showTd("category")    && <td className="py-2 pr-3">{r.category}</td>}
-                      {showTd("date")        && <td className="py-2 pr-3">{r.date ? new Date(r.date).toLocaleDateString() : '-'}</td>}
-                      {showTd("level")       && <td className="py-2 pr-3">{r.level}</td>}
-                      {showTd("preProb")     && <td className="py-2 pr-3 bg-orange-900/10">{isEditing ? <input type="number" min={0} max={100} value={editing.preMitigationProbability} onChange={e => setEditing(p => p ? {...p, preMitigationProbability: e.target.value} : p)} className="w-16 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white" /> : `${r.preMitigationProbability || 0}%`}</td>}
-                      {showTd("preImpact")   && <td className="py-2 pr-3 bg-orange-900/10">{isEditing ? <input type="number" min={0} max={100} value={editing.preMitigationImpact} onChange={e => setEditing(p => p ? {...p, preMitigationImpact: e.target.value} : p)} className="w-16 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white" /> : `${r.preMitigationImpact || 0}%`}</td>}
-                      {showTd("preScore")    && <td className="py-2 pr-3 bg-orange-900/10">{r.preMitigationScore?.toFixed(2) || 0}%</td>}
-                      {showTd("preCost")     && <td className="py-2 pr-3 bg-orange-900/10">{isEditing ? <input type="number" min={0} step={0.01} value={editing.preMitigationCost} onChange={e => setEditing(p => p ? {...p, preMitigationCost: e.target.value} : p)} className="w-20 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white" /> : `${r.preMitigationCost?.toFixed(2) || 0}`}</td>}
-                      {showTd("likelihood")  && <td className="py-2 pr-3">{isEditing ? <input type="number" min={0} max={5} value={editing.likelihood} onChange={e => setEditing(p => p ? {...p, likelihood: e.target.value} : p)} className="w-16 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white" /> : r.likelihood}</td>}
-                      {showTd("impact")      && <td className="py-2 pr-3">{isEditing ? <input type="number" min={0} max={5} value={editing.impact} onChange={e => setEditing(p => p ? {...p, impact: e.target.value} : p)} className="w-16 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white" /> : r.impact}</td>}
-                      {showTd("riskScore")   && <td className="py-2 pr-3">{r.riskScore}</td>}
-                      {showTd("riskLevel")   && <td className="py-2 pr-3"><span className={`px-2 py-0.5 rounded text-xs ${r.riskLevel === 'CRITICAL' ? 'bg-red-600/30 text-red-300' : r.riskLevel === 'HIGH' ? 'bg-orange-600/30 text-orange-300' : r.riskLevel === 'MEDIUM' ? 'bg-yellow-600/30 text-yellow-300' : 'bg-green-600/30 text-green-300'}`}>{r.riskLevel}</span></td>}
-                      {showTd("postProb")    && <td className="py-2 pr-3 bg-green-900/10">{isEditing ? <input type="number" min={0} max={100} value={editing.postMitigationProbability} onChange={e => setEditing(p => p ? {...p, postMitigationProbability: e.target.value} : p)} className="w-16 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white" /> : `${r.postMitigationProbability || 0}%`}</td>}
-                      {showTd("postImpact")  && <td className="py-2 pr-3 bg-green-900/10">{isEditing ? <input type="number" min={0} max={100} value={editing.postMitigationImpact} onChange={e => setEditing(p => p ? {...p, postMitigationImpact: e.target.value} : p)} className="w-16 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white" /> : `${r.postMitigationImpact || 0}%`}</td>}
-                      {showTd("postScore")   && <td className="py-2 pr-3 bg-green-900/10">{r.postMitigationScore?.toFixed(2) || 0}%</td>}
-                      {showTd("postCost")    && <td className="py-2 pr-3 bg-green-900/10">{isEditing ? <input type="number" min={0} step={0.01} value={editing.postMitigationCost} onChange={e => setEditing(p => p ? {...p, postMitigationCost: e.target.value} : p)} className="w-20 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white" /> : `${r.postMitigationCost?.toFixed(2) || 0}`}</td>}
-                      {showTd("mitigCost")   && <td className="py-2 pr-3">{isEditing ? <input type="number" min={0} step={0.01} value={editing.mitigationCost} onChange={e => setEditing(p => p ? {...p, mitigationCost: e.target.value} : p)} className="w-20 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white" /> : `${r.mitigationCost?.toFixed(2) || 0}`}</td>}
-                      {showTd("gap")         && <td className="py-2 pr-3">{isEditing ? <input type="text" value={editing.gap} onChange={e => setEditing(p => p ? {...p, gap: e.target.value} : p)} className="w-40 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white" /> : (r.gap || '-')}</td>}
-                      {showTd("threat")      && <td className="py-2 pr-3">{isEditing ? <input type="text" value={editing.threat} onChange={e => setEditing(p => p ? {...p, threat: e.target.value} : p)} className="w-40 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white" /> : (r.threat || '-')}</td>}
-                      {showTd("mitigation")  && <td className="py-2 pr-3">{isEditing ? <input type="text" value={editing.mitigation} onChange={e => setEditing(p => p ? {...p, mitigation: e.target.value} : p)} className="w-40 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white" /> : (r.mitigation || '-')}</td>}
-                      {showTd("description") && <td className="py-2 pr-3">{isEditing ? <input type="text" value={editing.description} onChange={e => setEditing(p => p ? {...p, description: e.target.value} : p)} className="w-64 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white" /> : (r.description || '-')}</td>}
-                      {showTd("impactLabel") && <td className="py-2 pr-3">{isEditing ? <input type="text" value={editing.impactLabel} onChange={e => setEditing(p => p ? {...p, impactLabel: e.target.value} : p)} className="w-32 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white" /> : (r.impactLabel || '-')}</td>}
-                      {showTd("impactDesc")  && <td className="py-2 pr-3">{isEditing ? <input type="text" value={editing.impactDescription} onChange={e => setEditing(p => p ? {...p, impactDescription: e.target.value} : p)} className="w-64 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white" /> : (r.impactDescription || '-')}</td>}
+                      {showTd("riskId") && <td className="py-2 pr-3 font-mono text-emerald-400">{r.riskRegisterId}</td>}
+                      {showTd("riskName") && <td className="py-2 pr-3">{isEditing ? <input type="text" value={editing.riskName} onChange={e => setEditing(p => p ? { ...p, riskName: e.target.value } : p)} className="w-40 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white" /> : (r.riskName || '-')}</td>}
+                      {showTd("status") && <td className="py-2 pr-3">{isEditing ? <select value={editing.status} onChange={e => setEditing(p => p ? { ...p, status: e.target.value as 'Open' | 'Closed' } : p)} className="w-24 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"><option value="Open">Open</option><option value="Closed">Closed</option></select> : <span className={`px-2 py-0.5 rounded text-xs font-semibold ${r.status === 'Open' ? 'bg-yellow-400 text-yellow-900' : 'bg-green-400 text-green-900'}`}>{r.status || 'Open'}</span>}</td>}
+                      {showTd("riskType") && <td className="py-2 pr-3">{isEditing ? <select value={editing.riskType} onChange={e => setEditing(p => p ? { ...p, riskType: e.target.value as 'Risk' | 'Issue' } : p)} className="w-24 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"><option value="Risk">Risk</option><option value="Issue">Issue</option></select> : (r.riskType || 'Risk')}</td>}
+                      {showTd("threatOpp") && <td className="py-2 pr-3">{isEditing ? <select value={editing.threatOpportunity} onChange={e => setEditing(p => p ? { ...p, threatOpportunity: e.target.value as 'Threat' | 'Opportunity' } : p)} className="w-28 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"><option value="Threat">Threat</option><option value="Opportunity">Opportunity</option></select> : (r.threatOpportunity || 'Threat')}</td>}
+                      {showTd("assignedTo") && <td className="py-2 pr-3">{isEditing ? <input type="text" value={editing.assignedTo} onChange={e => setEditing(p => p ? { ...p, assignedTo: e.target.value } : p)} className="w-32 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white" /> : (r.assignedTo || '-')}</td>}
+                      {showTd("company") && <td className="py-2 pr-3">{r.company}</td>}
+                      {showTd("category") && <td className="py-2 pr-3">{r.category}</td>}
+                      {showTd("date") && <td className="py-2 pr-3">{r.date ? new Date(r.date).toLocaleDateString() : '-'}</td>}
+                      {showTd("level") && <td className="py-2 pr-3">{r.level}</td>}
+                      {showTd("preProb") && <td className="py-2 pr-3 bg-orange-900/10">{isEditing ? <input type="number" min={0} max={100} value={editing.preMitigationProbability} onChange={e => setEditing(p => p ? { ...p, preMitigationProbability: e.target.value } : p)} className="w-16 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white" /> : `${r.preMitigationProbability || 0}%`}</td>}
+                      {showTd("preImpact") && <td className="py-2 pr-3 bg-orange-900/10">{isEditing ? <input type="number" min={0} max={100} value={editing.preMitigationImpact} onChange={e => setEditing(p => p ? { ...p, preMitigationImpact: e.target.value } : p)} className="w-16 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white" /> : `${r.preMitigationImpact || 0}%`}</td>}
+                      {showTd("preScore") && <td className="py-2 pr-3 bg-orange-900/10">{r.preMitigationScore?.toFixed(2) || 0}%</td>}
+                      {showTd("preCost") && <td className="py-2 pr-3 bg-orange-900/10">{isEditing ? <input type="number" min={0} step={0.01} value={editing.preMitigationCost} onChange={e => setEditing(p => p ? { ...p, preMitigationCost: e.target.value } : p)} className="w-20 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white" /> : `${r.preMitigationCost?.toFixed(2) || 0}`}</td>}
+                      {showTd("likelihood") && <td className="py-2 pr-3">{isEditing ? <input type="number" min={0} max={5} value={editing.likelihood} onChange={e => setEditing(p => p ? { ...p, likelihood: e.target.value } : p)} className="w-16 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white" /> : r.likelihood}</td>}
+                      {showTd("impact") && <td className="py-2 pr-3">{isEditing ? <input type="number" min={0} max={5} value={editing.impact} onChange={e => setEditing(p => p ? { ...p, impact: e.target.value } : p)} className="w-16 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white" /> : r.impact}</td>}
+                      {showTd("riskScore") && <td className="py-2 pr-3">{r.riskScore}</td>}
+                      {showTd("riskLevel") && <td className="py-2 pr-3"><span className={`px-2 py-0.5 rounded text-xs ${r.riskLevel === 'CRITICAL' ? 'bg-red-600/30 text-red-300' : r.riskLevel === 'HIGH' ? 'bg-orange-600/30 text-orange-300' : r.riskLevel === 'MEDIUM' ? 'bg-yellow-600/30 text-yellow-300' : 'bg-green-600/30 text-green-300'}`}>{r.riskLevel}</span></td>}
+                      {showTd("postProb") && <td className="py-2 pr-3 bg-green-900/10">{isEditing ? <input type="number" min={0} max={100} value={editing.postMitigationProbability} onChange={e => setEditing(p => p ? { ...p, postMitigationProbability: e.target.value } : p)} className="w-16 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white" /> : `${r.postMitigationProbability || 0}%`}</td>}
+                      {showTd("postImpact") && <td className="py-2 pr-3 bg-green-900/10">{isEditing ? <input type="number" min={0} max={100} value={editing.postMitigationImpact} onChange={e => setEditing(p => p ? { ...p, postMitigationImpact: e.target.value } : p)} className="w-16 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white" /> : `${r.postMitigationImpact || 0}%`}</td>}
+                      {showTd("postScore") && <td className="py-2 pr-3 bg-green-900/10">{r.postMitigationScore?.toFixed(2) || 0}%</td>}
+                      {showTd("postCost") && <td className="py-2 pr-3 bg-green-900/10">{isEditing ? <input type="number" min={0} step={0.01} value={editing.postMitigationCost} onChange={e => setEditing(p => p ? { ...p, postMitigationCost: e.target.value } : p)} className="w-20 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white" /> : `${r.postMitigationCost?.toFixed(2) || 0}`}</td>}
+                      {showTd("mitigCost") && <td className="py-2 pr-3">{isEditing ? <input type="number" min={0} step={0.01} value={editing.mitigationCost} onChange={e => setEditing(p => p ? { ...p, mitigationCost: e.target.value } : p)} className="w-20 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white" /> : `${r.mitigationCost?.toFixed(2) || 0}`}</td>}
+                      {showTd("gap") && <td className="py-2 pr-3">{isEditing ? <input type="text" value={editing.gap} onChange={e => setEditing(p => p ? { ...p, gap: e.target.value } : p)} className="w-40 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white" /> : (r.gap || '-')}</td>}
+                      {showTd("threat") && <td className="py-2 pr-3">{isEditing ? <input type="text" value={editing.threat} onChange={e => setEditing(p => p ? { ...p, threat: e.target.value } : p)} className="w-40 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white" /> : (r.threat || '-')}</td>}
+                      {showTd("mitigation") && <td className="py-2 pr-3">{isEditing ? <input type="text" value={editing.mitigation} onChange={e => setEditing(p => p ? { ...p, mitigation: e.target.value } : p)} className="w-40 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white" /> : (r.mitigation || '-')}</td>}
+                      {showTd("description") && <td className="py-2 pr-3">{isEditing ? <input type="text" value={editing.description} onChange={e => setEditing(p => p ? { ...p, description: e.target.value } : p)} className="w-64 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white" /> : (r.description || '-')}</td>}
+                      {showTd("impactLabel") && <td className="py-2 pr-3">{isEditing ? <input type="text" value={editing.impactLabel} onChange={e => setEditing(p => p ? { ...p, impactLabel: e.target.value } : p)} className="w-32 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white" /> : (r.impactLabel || '-')}</td>}
+                      {showTd("impactDesc") && <td className="py-2 pr-3">{isEditing ? <input type="text" value={editing.impactDescription} onChange={e => setEditing(p => p ? { ...p, impactDescription: e.target.value } : p)} className="w-64 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white" /> : (r.impactDescription || '-')}</td>}
                       <td className="py-2 pr-3">
                         {isEditing ? (
                           <div className="flex gap-2">
