@@ -514,9 +514,190 @@ export async function generateReport(level: string, analysisData: any) {
     }
   }
 
-  // All models failed
-  console.error('[generateReport] All models failed. Last error:', lastError);
-  throw new Error(lastError?.message || 'Failed to generate report — all AI models exhausted');
+  // All models failed — generate a structured report from the raw data instead
+  console.warn('[generateReport] All AI models failed. Generating fallback report from analysis data.');
+  return generateFallbackReport(level, analysisData);
+}
+
+function generateFallbackReport(level: string, analysisData: any) {
+  const {
+    company, category, date,
+    operational = [], tactical = [], strategic = [],
+  } = analysisData;
+
+  const allItems = [...operational, ...tactical, ...strategic];
+  const dist = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0, VERY_LOW: 0 };
+  allItems.forEach((a: any) => {
+    const lvl = a.analysis?.riskLevel || a.riskLevel || 'LOW';
+    if (dist[lvl as keyof typeof dist] !== undefined) dist[lvl as keyof typeof dist]++;
+  });
+
+  const criticalItems = allItems.filter((a: any) => (a.analysis?.riskLevel || a.riskLevel) === 'CRITICAL');
+  const highItems = allItems.filter((a: any) => (a.analysis?.riskLevel || a.riskLevel) === 'HIGH');
+  const mediumItems = allItems.filter((a: any) => (a.analysis?.riskLevel || a.riskLevel) === 'MEDIUM');
+  const levelLabel = level.charAt(0).toUpperCase() + level.slice(1);
+  const overallLevel = dist.CRITICAL > 0 ? 'CRITICAL' : dist.HIGH > 0 ? 'HIGH' : dist.MEDIUM > 0 ? 'MEDIUM' : 'LOW';
+
+  // ── Build Control Recommendations from actual findings only ──
+  // Only recommend controls where the assessment found real gaps
+  const CONTROL_CATEGORY_MAP: Record<string, string> = {
+    governance: 'Build Governance Structure',
+    policy: 'Develop Cyber Security Policies',
+    policies: 'Develop Cyber Security Policies',
+    physical: 'Develop Physical Security Process',
+    'physical security': 'Develop Physical Security Process',
+    risk: 'Develop Risk Assessment & Audit Process',
+    'risk assessment': 'Develop Risk Assessment & Audit Process',
+    audit: 'Develop Risk Assessment & Audit Process',
+    incident: 'Develop Incident Response & Management Plan',
+    'incident response': 'Develop Incident Response & Management Plan',
+    continuity: 'Develop Business Continuity & Disaster Recovery Plans',
+    'business continuity': 'Develop Business Continuity & Disaster Recovery Plans',
+    disaster: 'Develop Business Continuity & Disaster Recovery Plans',
+    recovery: 'Develop Business Continuity & Disaster Recovery Plans',
+    backup: 'Develop Business Continuity & Disaster Recovery Plans',
+    awareness: 'Establish Cyber Security Awareness & Training Programs',
+    training: 'Establish Cyber Security Awareness & Training Programs',
+    data: 'Develop Data Classification and IT Asset Management Process',
+    'data classification': 'Develop Data Classification and IT Asset Management Process',
+    asset: 'Develop Data Classification and IT Asset Management Process',
+    access: 'Develop Security Clearance & Access Control Procedures',
+    'access control': 'Develop Security Clearance & Access Control Procedures',
+    identity: 'Develop Security Clearance & Access Control Procedures',
+    clearance: 'Develop Security Clearance & Access Control Procedures',
+    password: 'Develop Security Clearance & Access Control Procedures',
+    authentication: 'Develop Security Clearance & Access Control Procedures',
+    mfa: 'Develop Security Clearance & Access Control Procedures',
+    'multi-factor': 'Develop Security Clearance & Access Control Procedures',
+    network: 'Implement Network Security Controls',
+    'network security': 'Implement Network Security Controls',
+    firewall: 'Implement Network Security Controls',
+    endpoint: 'Implement Endpoint Security & Patch Management',
+    patch: 'Implement Endpoint Security & Patch Management',
+    antivirus: 'Implement Endpoint Security & Patch Management',
+    vulnerability: 'Implement Vulnerability Management Program',
+    'vulnerability management': 'Implement Vulnerability Management Program',
+    scanning: 'Implement Vulnerability Management Program',
+    monitoring: 'Establish Security Monitoring & Logging',
+    logging: 'Establish Security Monitoring & Logging',
+    siem: 'Establish Security Monitoring & Logging',
+    detection: 'Establish Security Monitoring & Logging',
+    cryptography: 'Implement Cryptography & Data Protection Standards',
+    encryption: 'Implement Cryptography & Data Protection Standards',
+    'data protection': 'Implement Cryptography & Data Protection Standards',
+    vendor: 'Establish Third-Party & Vendor Risk Management',
+    'third party': 'Establish Third-Party & Vendor Risk Management',
+    'third-party': 'Establish Third-Party & Vendor Risk Management',
+    supply: 'Establish Third-Party & Vendor Risk Management',
+    compliance: 'Ensure Regulatory Compliance & Audit Readiness',
+    regulatory: 'Ensure Regulatory Compliance & Audit Readiness',
+  };
+
+  const recommendationSet = new Set<string>();
+
+  // Only scan items that have actual identified gaps (skip "No potential gap" / adequate controls)
+  const itemsWithGaps = allItems.filter((item: any) => {
+    const gap = (item.analysis?.gap || '').toLowerCase().trim();
+    return gap.length > 5
+      && gap !== 'n/a'
+      && !gap.startsWith('no potential gap')
+      && !gap.startsWith('no gap')
+      && !gap.includes('controls are adequate')
+      && !gap.includes('no significant gap');
+  });
+
+  itemsWithGaps.forEach((item: any) => {
+    const section = (item.section || item.level || '').toLowerCase();
+    const gap = (item.analysis?.gap || '').toLowerCase();
+    const mitigation = (item.analysis?.mitigation || '').toLowerCase();
+    const threat = (item.analysis?.threat || '').toLowerCase();
+    const question = (item.question || '').toLowerCase();
+    const combined = `${section} ${gap} ${mitigation} ${threat} ${question}`;
+
+    Object.entries(CONTROL_CATEGORY_MAP).forEach(([keyword, recommendation]) => {
+      if (combined.includes(keyword)) {
+        recommendationSet.add(recommendation);
+      }
+    });
+  });
+
+  const controlRecommendations = Array.from(recommendationSet);
+
+  const formatItem = (item: any, i: number, showMitigation = true) => {
+    const a = item.analysis || {};
+    return `${i + 1}. ${item.question || 'N/A'}
+   Answer: ${item.answer || 'N/A'}
+   Risk Score: ${a.riskScore || 0}/25
+   Gap: ${a.gap || 'N/A'}
+   Threat: ${a.threat || 'N/A'}${showMitigation ? `\n   Mitigation: ${a.mitigation || 'N/A'}` : ''}`;
+  };
+
+  const content = `${levelLabel.toUpperCase()} SECURITY REPORT
+
+Organization: ${company}
+Category: ${category}
+Assessment Date: ${new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+Report Generated: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+
+1. EXECUTIVE SUMMARY
+
+Total Controls Assessed: ${allItems.length}
+Overall Risk Level: ${overallLevel}
+
+Risk Distribution:
+- CRITICAL: ${dist.CRITICAL}
+- HIGH: ${dist.HIGH}
+- MEDIUM: ${dist.MEDIUM}
+- LOW: ${dist.LOW}
+- VERY LOW: ${dist.VERY_LOW}
+
+${dist.CRITICAL > 0 ? `Immediate attention is required for ${dist.CRITICAL} critical risk(s).` : 'No critical risks identified.'}
+${dist.HIGH > 0 ? `${dist.HIGH} high-priority risk(s) should be addressed within 90 days.` : ''}
+
+2. CRITICAL FINDINGS
+
+${criticalItems.length > 0 ? criticalItems.map((item: any, i: number) => formatItem(item, i)).join('\n\n') : 'None identified.'}
+
+3. HIGH PRIORITY FINDINGS
+
+${highItems.length > 0 ? highItems.slice(0, 10).map((item: any, i: number) => formatItem(item, i)).join('\n\n') : 'None identified.'}
+
+4. MEDIUM PRIORITY FINDINGS
+
+${mediumItems.length > 0 ? mediumItems.slice(0, 10).map((item: any, i: number) => formatItem(item, i, false)).join('\n\n') : 'None identified.'}
+
+5. RECOMMENDATIONS
+
+5.1. Immediate Actions (Critical Risks)
+${criticalItems.slice(0, 5).map((item: any, i: number) => `${i + 1}. ${item.analysis?.mitigation || 'Review and remediate this control'}`).join('\n') || 'No critical actions required.'}
+
+5.2. Short-term Actions (High Risks)
+${highItems.slice(0, 5).map((item: any, i: number) => `${i + 1}. ${item.analysis?.mitigation || 'Review and remediate this control'}`).join('\n') || 'No high-priority actions required.'}
+
+6. CONTROL RECOMMENDATIONS
+
+6.1. Control Recommendations
+
+Based on the identified gaps in this assessment, the following controls are recommended for ${company}:
+
+${controlRecommendations.length > 0
+      ? controlRecommendations.map(r => `- ${r}`).join('\n')
+      : '- No specific control gaps were identified. Current controls appear adequate.'}
+
+These recommendations are derived directly from the gaps identified during the assessment and align with ISO 27001, NIST CSF, and CIS Controls v8.
+
+7. CONCLUSION
+
+This ${levelLabel} report covers the security posture for ${company} across ${allItems.length} assessed controls.
+Regular reassessment is recommended to maintain and improve the security posture.
+
+Report generated: ${new Date().toLocaleString()}`;
+
+  return {
+    content,
+    riskMatrix: { high: dist.HIGH, medium: dist.MEDIUM, low: dist.LOW },
+    charts: [],
+  };
 }
 
 export async function analyzeQuestionnaire(responses: any[]) {
