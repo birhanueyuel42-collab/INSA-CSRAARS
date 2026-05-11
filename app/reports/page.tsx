@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Layout from "../components/Layout";
 import {
   HiOfficeBuilding, HiCalendar, HiShieldCheck, HiSearch,
   HiRefresh, HiDownload, HiExclamation, HiBadgeCheck,
-  HiX, HiSparkles,
+  HiX, HiSparkles, HiMenuAlt2,
 } from "react-icons/hi";
 import { MdOpenInNew } from "react-icons/md";
 import { RiBarChartBoxFill } from "react-icons/ri";
@@ -31,10 +31,10 @@ type Registration = {
 
 // Role → which report types they can access
 const ROLE_ACCESS: Record<string, string[]> = {
-  "Director":      ["strategic"],
+  "Director": ["strategic"],
   "Division Head": ["strategic", "tactical"],
-  "Risk Analyst":  ["tactical", "operational"],
-  "Staff":         ["operational"],
+  "Risk Analyst": ["tactical", "operational"],
+  "Staff": ["operational"],
 };
 
 const REPORT_TYPES = [
@@ -83,7 +83,22 @@ export default function ReportsPage() {
   const [generating, setGenerating] = useState<{ id: string; level: string } | null>(null);
   const [exporting, setExporting] = useState<{ id: string; fmt: string } | null>(null);
   const [modal, setModal] = useState<{ assessment: Assessment; level: string; content: string; slides: Array<{ title: string; body: string }> } | null>(null);
-  const [slideIndex, setSlideIndex] = useState(0);
+  const [tocOpen, setTocOpen] = useState(true);
+  const sectionRefs = useRef<Record<number, HTMLElement | null>>({});
+  const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -123,7 +138,6 @@ export default function ReportsPage() {
       const data = await res.json();
       if (data.success && data.report?.content) {
         const slides = data.slides || [{ title: "Report", body: data.report.content }];
-        setSlideIndex(0);
         setModal({ assessment, level, content: data.report.content, slides });
       } else {
         alert(data.error || "Failed to generate report");
@@ -136,10 +150,10 @@ export default function ReportsPage() {
     setExporting({ id: assessment._id, fmt });
     try {
       const endpoints: Record<string, string> = {
-        PDF:   `/api/reports/export-pdf?analysisId=${assessment._id}&level=${level}`,
-        DOCX:  `/api/reports/export?analysisId=${assessment._id}&format=DOCX&level=${level}`,
+        PDF: `/api/reports/export-pdf?analysisId=${assessment._id}&level=${level}`,
+        DOCX: `/api/reports/export?analysisId=${assessment._id}&format=DOCX&level=${level}`,
         Excel: `/api/reports/export-excel?analysisId=${assessment._id}&level=${level}`,
-        PPTX:  `/api/reports/export-pptx?analysisId=${assessment._id}&level=${level}`,
+        PPTX: `/api/reports/export-pptx?analysisId=${assessment._id}&level=${level}`,
       };
       const exts: Record<string, string> = { PDF: "pdf", DOCX: "docx", Excel: "xlsx", PPTX: "pptx" };
       const res = await fetch(endpoints[fmt]);
@@ -239,6 +253,43 @@ export default function ReportsPage() {
           )}
         </div>
 
+        {/* Company quick-jump dropdown */}
+        <div className="relative" ref={dropdownRef}>
+          <p className="text-xs font-semibold text-gray-500 mb-1.5">Company</p>
+          <button
+            onClick={() => setDropdownOpen(o => !o)}
+            className="w-full flex items-center justify-between px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-500 hover:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-200 transition"
+          >
+            <span>Select company...</span>
+            <svg className={`w-4 h-4 text-gray-400 transition-transform ${dropdownOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          {dropdownOpen && (
+            <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+              {assessments.map(a => (
+                <button
+                  key={a._id}
+                  onClick={() => {
+                    setDropdownOpen(false);
+                    setSearch("");
+                    setTimeout(() => {
+                      cardRefs.current[a._id]?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }, 50);
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 flex items-center gap-2 transition border-b border-gray-50 last:border-0"
+                >
+                  <HiOfficeBuilding className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                  {a.company}
+                </button>
+              ))}
+              {assessments.length === 0 && (
+                <p className="px-4 py-3 text-sm text-gray-400">No companies available</p>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* Empty state */}
         {filtered.length === 0 && (
           <div className="bg-white border border-gray-100 rounded-xl p-12 text-center">
@@ -257,7 +308,7 @@ export default function ReportsPage() {
             const reg = registrations.find(r => r.analysisId === assessment._id);
 
             return (
-              <div key={assessment._id} className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+              <div key={assessment._id} ref={el => { cardRefs.current[assessment._id] = el; }} className="bg-white border border-gray-200 rounded-xl overflow-hidden scroll-mt-4">
 
                 {/* Company header */}
                 <div className="px-5 py-4 border-b border-gray-100">
@@ -295,7 +346,7 @@ export default function ReportsPage() {
                   {/* Risk bar */}
                   <div className="mt-3">
                     <div className="flex rounded-full overflow-hidden h-1.5 bg-gray-100">
-                      {(["CRITICAL","HIGH","MEDIUM","LOW"] as const).map(lvl =>
+                      {(["CRITICAL", "HIGH", "MEDIUM", "LOW"] as const).map(lvl =>
                         dist[lvl] > 0 ? (
                           <div key={lvl} title={`${lvl}: ${dist[lvl]}`}
                             className={`${RISK_COLORS[lvl]}`}
@@ -304,7 +355,7 @@ export default function ReportsPage() {
                       )}
                     </div>
                     <div className="flex gap-3 mt-1.5">
-                      {(["CRITICAL","HIGH","MEDIUM","LOW"] as const).map(lvl => (
+                      {(["CRITICAL", "HIGH", "MEDIUM", "LOW"] as const).map(lvl => (
                         <span key={lvl} className="flex items-center gap-1 text-xs text-gray-400">
                           <span className={`w-1.5 h-1.5 rounded-full ${RISK_COLORS[lvl]}`} />
                           {dist[lvl]} {lvl.charAt(0) + lvl.slice(1).toLowerCase()}
@@ -338,7 +389,7 @@ export default function ReportsPage() {
                             ) : (
                               <HiSparkles className="w-3 h-3" />
                             )}
-                            {isGen ? "Generating..." : "Generate & Read"}
+                            {isGen ? "Generating..." : "Read"}
                           </button>
 
                           {/* Export buttons inline */}
@@ -363,72 +414,279 @@ export default function ReportsPage() {
         </div>
       </div>
 
-      {/* Report modal — slide reader */}
+      {/* Report viewer — full-screen online reader */}
       {modal && (() => {
         const rt = REPORT_TYPES.find(r => r.key === modal.level)!;
-        const slide = modal.slides[slideIndex];
-        const total = modal.slides.length;
-        return (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+        const LEVEL_COLORS: Record<string, string> = {
+          strategic: "bg-purple-600",
+          tactical: "bg-blue-600",
+          operational: "bg-emerald-600",
+        };
+        const levelColor = LEVEL_COLORS[modal.level] || "bg-blue-600";
 
-              {/* Header */}
-              <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
-                <div>
-                  <h2 className="font-bold text-gray-900 text-sm">{modal.assessment.company}</h2>
-                  <p className="text-xs text-gray-400">{rt?.label} · {total} sections</p>
+        // Render a single slide body with basic markdown-like formatting
+        const renderBody = (body: string) => {
+          const lines = body.split("\n");
+          const elements: React.ReactNode[] = [];
+          let listItems: string[] = [];
+          let tableLines: string[] = [];
+
+          const flushList = (key: string) => {
+            if (listItems.length > 0) {
+              elements.push(
+                <ul key={`ul-${key}`} className="list-none space-y-1.5 my-3 pl-0">
+                  {listItems.map((item, i) => (
+                    <li key={i} className="flex items-start gap-2 text-gray-700 text-sm leading-relaxed">
+                      <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
+                      <span dangerouslySetInnerHTML={{ __html: formatInline(item) }} />
+                    </li>
+                  ))}
+                </ul>
+              );
+              listItems = [];
+            }
+          };
+
+          const flushTable = (key: string) => {
+            if (tableLines.length >= 2) {
+              const headers = tableLines[0].split("|").map(h => h.trim()).filter(Boolean);
+              const rows = tableLines.slice(2).map(r => r.split("|").map(c => c.trim()).filter(Boolean));
+              elements.push(
+                <div key={`tbl-${key}`} className="overflow-x-auto my-4 rounded-lg border border-gray-200">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="bg-gray-50 border-b border-gray-200">
+                        {headers.map((h, i) => (
+                          <th key={i} className="px-3 py-2 text-left font-semibold text-gray-700 whitespace-nowrap">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((row, ri) => (
+                        <tr key={ri} className={ri % 2 === 0 ? "bg-white" : "bg-gray-50/50"}>
+                          {row.map((cell, ci) => (
+                            <td key={ci} className="px-3 py-2 text-gray-600 border-t border-gray-100"
+                              dangerouslySetInnerHTML={{ __html: formatInline(cell) }} />
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
+              );
+              tableLines = [];
+            } else {
+              tableLines = [];
+            }
+          };
+
+          lines.forEach((line, idx) => {
+            const trimmed = line.trim();
+
+            // Table row detection
+            if (trimmed.startsWith("|") && trimmed.endsWith("|")) {
+              flushList(`pre-tbl-${idx}`);
+              tableLines.push(trimmed);
+              return;
+            } else if (tableLines.length > 0) {
+              flushTable(`tbl-${idx}`);
+            }
+
+            // Separator lines
+            if (/^[=\-─━]{4,}$/.test(trimmed)) {
+              flushList(`pre-sep-${idx}`);
+              elements.push(<hr key={`hr-${idx}`} className="my-4 border-gray-200" />);
+              return;
+            }
+
+            // Bullet points
+            if (/^[-•*]\s/.test(trimmed)) {
+              listItems.push(trimmed.replace(/^[-•*]\s/, ""));
+              return;
+            } else {
+              flushList(`pre-${idx}`);
+            }
+
+            // Numbered list items like "1. text" or "KPI 1: text"
+            if (/^(\d+\.|KPI\s*\d+:)\s/.test(trimmed)) {
+              elements.push(
+                <div key={`num-${idx}`} className="flex items-start gap-2 my-1.5">
+                  <span className="shrink-0 w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center mt-0.5">
+                    {trimmed.match(/^(\d+)/)?.[1] || "•"}
+                  </span>
+                  <span className="text-sm text-gray-700 leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: formatInline(trimmed.replace(/^(\d+\.|KPI\s*\d+:)\s/, "")) }} />
+                </div>
+              );
+              return;
+            }
+
+            // Empty line
+            if (!trimmed) {
+              elements.push(<div key={`sp-${idx}`} className="h-2" />);
+              return;
+            }
+
+            // Sub-heading (ALL CAPS line or starts with ##)
+            if (/^#{2,3}\s/.test(trimmed)) {
+              elements.push(
+                <h4 key={`h4-${idx}`} className="text-sm font-bold text-gray-800 mt-5 mb-2 uppercase tracking-wide">
+                  {trimmed.replace(/^#{2,3}\s/, "")}
+                </h4>
+              );
+              return;
+            }
+
+            if (/^[A-Z][A-Z\s&\/\-:]{8,}$/.test(trimmed) && trimmed.length < 80) {
+              elements.push(
+                <h4 key={`caps-${idx}`} className="text-xs font-bold text-gray-500 mt-5 mb-1.5 uppercase tracking-widest">
+                  {trimmed}
+                </h4>
+              );
+              return;
+            }
+
+            // Regular paragraph
+            elements.push(
+              <p key={`p-${idx}`} className="text-sm text-gray-700 leading-relaxed my-1"
+                dangerouslySetInnerHTML={{ __html: formatInline(trimmed) }} />
+            );
+          });
+
+          flushList("end");
+          flushTable("end");
+          return elements;
+        };
+
+        // Inline formatting: **bold**, `code`, RISK levels
+        const formatInline = (text: string): string => {
+          return text
+            .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-gray-900">$1</strong>')
+            .replace(/`(.+?)`/g, '<code class="bg-gray-100 text-blue-700 px-1 py-0.5 rounded text-xs font-mono">$1</code>')
+            .replace(/\b(CRITICAL)\b/g, '<span class="font-bold text-red-600">CRITICAL</span>')
+            .replace(/\b(HIGH)\b/g, '<span class="font-bold text-orange-500">HIGH</span>')
+            .replace(/\b(MEDIUM)\b/g, '<span class="font-bold text-yellow-600">MEDIUM</span>')
+            .replace(/\b(LOW)\b/g, '<span class="font-bold text-emerald-600">LOW</span>')
+            .replace(/\b(PASS)\b/g, '<span class="font-bold text-emerald-600">PASS</span>')
+            .replace(/\b(FAIL)\b/g, '<span class="font-bold text-red-600">FAIL</span>')
+            .replace(/\b(AT RISK)\b/g, '<span class="font-bold text-orange-500">AT RISK</span>');
+        };
+
+        return (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-stretch justify-center z-50">
+            <div className="bg-white w-full max-w-6xl flex flex-col shadow-2xl md:m-4 md:rounded-2xl overflow-hidden">
+
+              {/* Top bar */}
+              <div className={`${levelColor} px-6 py-3 flex items-center justify-between shrink-0`}>
                 <div className="flex items-center gap-3">
-                  <span className="text-xs text-gray-400">{slideIndex + 1} / {total}</span>
+                  <button
+                    onClick={() => setTocOpen(o => !o)}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/20 hover:bg-white/30 text-white transition"
+                    title="Toggle table of contents"
+                  >
+                    <HiMenuAlt2 className="w-4 h-4" />
+                  </button>
+                  <div>
+                    <p className="text-white font-bold text-sm leading-tight">{modal.assessment.company}</p>
+                    <p className="text-white/70 text-xs">{rt?.label} · {modal.slides.length} sections</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {EXPORT_FMTS.map(fmt => (
+                    <button key={fmt}
+                      onClick={() => handleExport(modal.assessment, modal.level, fmt)}
+                      disabled={!!exporting}
+                      className="hidden sm:flex items-center gap-1 px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white rounded-lg text-xs font-semibold transition disabled:opacity-50">
+                      <HiDownload className="w-3 h-3" />
+                      {exporting?.fmt === fmt ? "..." : fmt}
+                    </button>
+                  ))}
                   <button onClick={() => setModal(null)}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-400 transition">
+                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/20 hover:bg-white/30 text-white transition ml-1">
                     <HiX className="w-4 h-4" />
                   </button>
                 </div>
               </div>
 
-              {/* Slide content */}
-              <div className="flex-1 overflow-y-auto px-8 py-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4 pb-3 border-b border-gray-100">
-                  {slide?.title}
-                </h3>
-                <div className="text-sm text-gray-700 leading-7 whitespace-pre-wrap font-sans">
-                  {slide?.body}
-                </div>
-              </div>
+              {/* Body: TOC sidebar + content */}
+              <div className="flex flex-1 overflow-hidden">
 
-              {/* Navigation + export */}
-              <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between shrink-0">
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setSlideIndex(i => Math.max(0, i - 1))}
-                    disabled={slideIndex === 0}
-                    className="px-4 py-2 border border-gray-200 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50 transition disabled:opacity-30"
-                  >
-                    ← Previous
-                  </button>
-                  <button
-                    onClick={() => setSlideIndex(i => Math.min(total - 1, i + 1))}
-                    disabled={slideIndex === total - 1}
-                    className="px-4 py-2 border border-gray-200 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50 transition disabled:opacity-30"
-                  >
-                    Next →
-                  </button>
-                </div>
+                {/* Table of Contents */}
+                {tocOpen && (
+                  <aside className="w-56 shrink-0 border-r border-gray-100 overflow-y-auto bg-gray-50/60 hidden md:block">
+                    <p className="px-4 pt-4 pb-2 text-xs font-bold text-gray-400 uppercase tracking-widest">Contents</p>
+                    <nav className="pb-4">
+                      {modal.slides.map((slide, i) => (
+                        <button
+                          key={i}
+                          onClick={() => {
+                            const el = sectionRefs.current[i];
+                            if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                          }}
+                          className="w-full text-left px-4 py-2 text-xs text-gray-600 hover:bg-white hover:text-blue-700 transition leading-snug border-l-2 border-transparent hover:border-blue-400"
+                        >
+                          <span className="text-gray-400 mr-1.5">{i + 1}.</span>
+                          {slide.title}
+                        </button>
+                      ))}
+                    </nav>
+                  </aside>
+                )}
 
-                {/* Slide dots */}
-                <div className="flex gap-1">
-                  {modal.slides.map((_, i) => (
-                    <button key={i} onClick={() => setSlideIndex(i)}
-                      className={`w-2 h-2 rounded-full transition ${i === slideIndex ? "bg-blue-600" : "bg-gray-200 hover:bg-gray-300"}`} />
-                  ))}
-                </div>
+                {/* Scrollable report content */}
+                <main className="flex-1 overflow-y-auto">
+                  <div className="max-w-3xl mx-auto px-8 py-8 space-y-10">
 
-                <button onClick={() => handleExport(modal.assessment, modal.level, "PDF")}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition">
-                  <HiDownload className="w-4 h-4" />
-                  Export PDF
-                </button>
+                    {/* Report cover */}
+                    <div className="text-center pb-6 border-b border-gray-200">
+                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold text-white ${levelColor} mb-3`}>
+                        {rt?.label.toUpperCase()}
+                      </span>
+                      <h1 className="text-2xl font-bold text-gray-900">{modal.assessment.company}</h1>
+                      <p className="text-gray-400 text-sm mt-1">
+                        {modal.assessment.category} · Generated {new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+                      </p>
+                    </div>
+
+                    {/* Sections */}
+                    {modal.slides.map((slide, i) => (
+                      <section
+                        key={i}
+                        ref={el => { sectionRefs.current[i] = el; }}
+                        className="scroll-mt-4"
+                      >
+                        <div className="flex items-center gap-3 mb-4">
+                          <span className={`w-7 h-7 rounded-lg ${levelColor} text-white text-xs font-bold flex items-center justify-center shrink-0`}>
+                            {i + 1}
+                          </span>
+                          <h2 className="text-base font-bold text-gray-900">{slide.title}</h2>
+                        </div>
+                        <div className="pl-10">
+                          {renderBody(slide.body)}
+                        </div>
+                        {i < modal.slides.length - 1 && (
+                          <hr className="mt-10 border-gray-100" />
+                        )}
+                      </section>
+                    ))}
+
+                    {/* Footer */}
+                    <div className="pt-6 border-t border-gray-200 text-center">
+                      <p className="text-xs text-gray-400">End of {rt?.label} — {modal.assessment.company}</p>
+                      <div className="flex justify-center gap-2 mt-4">
+                        {EXPORT_FMTS.map(fmt => (
+                          <button key={fmt}
+                            onClick={() => handleExport(modal.assessment, modal.level, fmt)}
+                            disabled={!!exporting}
+                            className="flex items-center gap-1.5 px-4 py-2 border border-gray-200 text-gray-600 rounded-lg text-xs font-semibold hover:bg-gray-50 transition disabled:opacity-50">
+                            <HiDownload className="w-3.5 h-3.5" />
+                            {exporting?.fmt === fmt ? "Exporting..." : `Export ${fmt}`}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </main>
               </div>
             </div>
           </div>

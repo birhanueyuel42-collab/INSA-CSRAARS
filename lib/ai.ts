@@ -307,10 +307,10 @@ function buildUserPrompt(level: string, data: any): string {
 
   const mediumItems = (level === 'tactical' || level === 'operational')
     ? allItems
-        .filter((a: any) => (a.analysis?.riskLevel || a.riskLevel) === 'MEDIUM')
-        .slice(0, 8)
-        .map((a: any) => `  - [${a.section || a.level}] ${a.question}\n    Gap: ${a.analysis?.gap || ''} | Score: ${a.analysis?.riskScore || 0}/25`)
-        .join('\n')
+      .filter((a: any) => (a.analysis?.riskLevel || a.riskLevel) === 'MEDIUM')
+      .slice(0, 8)
+      .map((a: any) => `  - [${a.section || a.level}] ${a.question}\n    Gap: ${a.analysis?.gap || ''} | Score: ${a.analysis?.riskScore || 0}/25`)
+      .join('\n')
     : '';
 
   // ── Operational: full technical detail per finding ──
@@ -452,6 +452,13 @@ export function parseReportIntoSlides(content: string, level: string): Array<{ t
 
   return slides.filter(s => s.body.length > 10);
 }
+// Free models available on OpenRouter (no credits required)
+const FREE_MODELS = [
+  'mistralai/mistral-7b-instruct:free',
+  'meta-llama/llama-3.1-8b-instruct:free',
+  'google/gemma-2-9b-it:free',
+];
+
 export async function generateReport(level: string, analysisData: any) {
   const apiKey = process.env.OPENAI_API_KEY || process.env.OPENROUTER_API_KEY || "";
 
@@ -462,36 +469,54 @@ export async function generateReport(level: string, analysisData: any) {
   const systemPrompt = SYSTEM_PROMPTS[level] || SYSTEM_PROMPTS.operational;
   const userPrompt = buildUserPrompt(level, analysisData);
 
-  try {
-    const openRouter = initializeAI(apiKey);
+  // Try free models first, then fall back to paid models if credits available
+  const modelsToTry = [...FREE_MODELS, 'openai/gpt-4o-mini', 'openai/gpt-4o'];
+  let lastError: any = null;
 
-    const completion = await (openRouter.chat as any).send({
-      model: 'openai/gpt-4o',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
-      temperature: 0.3,
-      max_tokens: level === 'operational' ? 4000 : 3000,
-    });
+  for (const model of modelsToTry) {
+    try {
+      console.log(`[generateReport] Trying model: ${model}`);
+      const openRouter = initializeAI(apiKey);
 
-    const anyCompletion: any = completion;
-    const choice = anyCompletion?.choices?.[0] ?? anyCompletion?.choice ?? null;
-    const raw = choice?.message?.content ?? choice?.text ?? anyCompletion?.text ?? '';
+      const completion = await (openRouter.chat as any).send({
+        model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        temperature: 0.3,
+        max_tokens: 2000,
+      });
 
-    const content = typeof raw === 'string' ? raw
-      : Array.isArray(raw) ? raw.map((r: any) => (typeof r === 'string' ? r : r.text || '')).join('\n')
-      : String(raw || '');
+      const anyCompletion: any = completion;
+      const choice = anyCompletion?.choices?.[0] ?? anyCompletion?.choice ?? null;
+      const raw = choice?.message?.content ?? choice?.text ?? anyCompletion?.text ?? '';
 
-    return {
-      content: content || `${level.toUpperCase()} report generation completed. Please review the analysis data.`,
-      riskMatrix: { high: 0, medium: 0, low: 0 },
-      charts: [],
-    };
-  } catch (error: any) {
-    console.error('[generateReport] AI error:', error);
-    throw new Error(error?.message || 'Failed to generate report via AI');
+      const content = typeof raw === 'string' ? raw
+        : Array.isArray(raw) ? raw.map((r: any) => (typeof r === 'string' ? r : r.text || '')).join('\n')
+          : String(raw || '');
+
+      if (content && content.trim().length > 50) {
+        console.log(`[generateReport] Success with model: ${model}`);
+        return {
+          content,
+          riskMatrix: { high: 0, medium: 0, low: 0 },
+          charts: [],
+        };
+      }
+    } catch (error: any) {
+      const status = error?.status || error?.response?.status;
+      console.warn(`[generateReport] Model ${model} failed (status ${status}):`, error?.message);
+      lastError = error;
+      // 402 = insufficient credits, 429 = rate limit, 503 = unavailable — try next model
+      // For any other error also try next model
+      continue;
+    }
   }
+
+  // All models failed
+  console.error('[generateReport] All models failed. Last error:', lastError);
+  throw new Error(lastError?.message || 'Failed to generate report — all AI models exhausted');
 }
 
 export async function analyzeQuestionnaire(responses: any[]) {
