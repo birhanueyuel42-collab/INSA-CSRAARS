@@ -416,10 +416,44 @@ Now generate the complete ${level.toUpperCase()} REPORT following your system in
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Main export: generateReport
+// Parse report text into slides for the online reader
 // ─────────────────────────────────────────────────────────────────────────────
+export function parseReportIntoSlides(content: string, level: string): Array<{ title: string; body: string }> {
+  // Split on numbered section headings like "1. TITLE" or "━━━ SECTION 1: TITLE ━━━"
+  const lines = content.split('\n');
+  const slides: Array<{ title: string; body: string }> = [];
+  let currentTitle = '';
+  let currentBody: string[] = [];
+
+  const isHeading = (line: string) =>
+    /^#{1,3}\s/.test(line) ||
+    /^[0-9]+\.\s+[A-Z]/.test(line) ||
+    /^━+\s*SECTION/.test(line) ||
+    /^[A-Z][A-Z\s&\/\-]{5,}$/.test(line.trim());
+
+  for (const line of lines) {
+    if (isHeading(line) && line.trim().length > 0) {
+      if (currentTitle) {
+        slides.push({ title: currentTitle, body: currentBody.join('\n').trim() });
+      }
+      currentTitle = line.replace(/^#+\s*/, '').replace(/^[0-9]+\.\s*/, '').replace(/^━+\s*SECTION\s*\d*:\s*/i, '').replace(/━+/g, '').trim();
+      currentBody = [];
+    } else {
+      currentBody.push(line);
+    }
+  }
+  if (currentTitle) slides.push({ title: currentTitle, body: currentBody.join('\n').trim() });
+
+  // If no headings found, split into chunks of ~300 chars
+  if (slides.length <= 1) {
+    const chunks = content.match(/.{1,800}(\n|$)/gs) || [content];
+    return chunks.map((chunk, i) => ({ title: `Section ${i + 1}`, body: chunk.trim() }));
+  }
+
+  return slides.filter(s => s.body.length > 10);
+}
 export async function generateReport(level: string, analysisData: any) {
-  const apiKey = process.env.OPENAI_API_KEY || process.env.OPENROUTER_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY || process.env.OPENROUTER_API_KEY || "";
 
   if (!apiKey) {
     throw new Error('AI API key not configured');
