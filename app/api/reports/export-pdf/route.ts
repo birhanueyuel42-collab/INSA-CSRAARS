@@ -23,44 +23,60 @@ function generateMultiPagePdf(data: {
     date: string;
     analyses: any[];
     summary: any;
+    level?: string;
+    reportContent?: string | null;
 }): Buffer {
-    const { company, category, date, analyses, summary } = data;
+    const { company, category, date, analyses, summary, level = 'operational', reportContent } = data;
     const overall = summary?.overall || {};
     const dist = overall.riskDistribution || {};
 
-    // Build all lines first
     const allLines: { text: string; size: number; bold: boolean; color: string }[] = [];
 
     const add = (text: string, size = 10, bold = false, color = '000000') => {
         allLines.push({ text, size, bold, color });
     };
 
-    add('RISK ASSESSMENT REPORT', 16, true, '1E3A8A');
+    const levelLabel = level.charAt(0).toUpperCase() + level.slice(1);
+    add(`${levelLabel.toUpperCase()} SECURITY REPORT`, 16, true, '1E3A8A');
     add('='.repeat(60));
     add(`Organization: ${company}`, 11, true);
     add(`Category: ${category}`);
+    add(`Report Level: ${levelLabel}`);
     add(`Generated: ${new Date(date).toLocaleDateString()}`);
     add('');
-    add('EXECUTIVE SUMMARY', 13, true, '1E3A8A');
-    add('-'.repeat(40));
-    add(`Total Questions: ${overall.totalQuestionsAnalyzed || analyses.length}`);
-    add(`Average Risk Score: ${overall.averageRiskScore || 0}/25`);
-    add(`Critical: ${dist.CRITICAL || 0}  |  High: ${dist.HIGH || 0}  |  Medium: ${dist.MEDIUM || 0}  |  Low: ${dist.LOW || 0}`);
-    add('');
-    add('RISK ANALYSIS DETAILS', 13, true, '1E3A8A');
-    add('='.repeat(60));
 
-    analyses.forEach((a: any, idx: number) => {
-        add('');
-        add(`Q${idx + 1}: ${a.question || ''}`, 10, true);
-        add(`Answer: ${a.answer || ''}`, 9);
-        const rl = a.analysis?.riskLevel || 'UNKNOWN';
-        const color = rl === 'CRITICAL' ? 'DC2626' : rl === 'HIGH' ? 'EA580C' : rl === 'MEDIUM' ? 'CA8A04' : '16A34A';
-        add(`Risk: ${rl} | Score: ${a.analysis?.riskScore || 0}/25 | L:${a.analysis?.likelihood || 0} I:${a.analysis?.impact || 0}`, 9, false, color);
-        if (a.analysis?.gap) add(`Gap: ${a.analysis.gap}`, 9);
-        if (a.analysis?.mitigation) add(`Fix: ${a.analysis.mitigation}`, 9, false, '15803D');
+    if (reportContent) {
+        // Use AI-generated content
+        add(`${levelLabel} REPORT CONTENT`, 13, true, '1E3A8A');
         add('-'.repeat(40));
-    });
+        const lines = reportContent.split('\n');
+        for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed) { add(''); continue; }
+            const isHeading = /^[0-9]+\./.test(trimmed) || /^[A-Z][A-Z\s]{5,}$/.test(trimmed) || /^━+/.test(trimmed);
+            add(trimmed, isHeading ? 11 : 9, isHeading, isHeading ? '1E3A8A' : '000000');
+        }
+    } else {
+        // Fallback: raw analysis data
+        add('RISK DISTRIBUTION', 13, true, '1E3A8A');
+        add('-'.repeat(40));
+        add(`Critical: ${dist.CRITICAL || 0}  |  High: ${dist.HIGH || 0}  |  Medium: ${dist.MEDIUM || 0}  |  Low: ${dist.LOW || 0}`);
+        add(`Average Risk Score: ${overall.averageRiskScore || 0}/25`);
+        add('');
+        add('RISK ANALYSIS DETAILS', 13, true, '1E3A8A');
+        add('='.repeat(60));
+        analyses.forEach((a: any, idx: number) => {
+            add('');
+            add(`Q${idx + 1}: ${a.question || ''}`, 10, true);
+            add(`Answer: ${a.answer || ''}`, 9);
+            const rl = a.analysis?.riskLevel || 'UNKNOWN';
+            const color = rl === 'CRITICAL' ? 'DC2626' : rl === 'HIGH' ? 'EA580C' : rl === 'MEDIUM' ? 'CA8A04' : '16A34A';
+            add(`Risk: ${rl} | Score: ${a.analysis?.riskScore || 0}/25`, 9, false, color);
+            if (a.analysis?.gap) add(`Gap: ${a.analysis.gap}`, 9);
+            if (a.analysis?.mitigation) add(`Fix: ${a.analysis.mitigation}`, 9, false, '15803D');
+            add('-'.repeat(40));
+        });
+    }
 
     add('');
     add('INSA - Cyber Security Risk Analysis & Reporting System', 9, false, '64748B');
@@ -142,6 +158,7 @@ export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
         const analysisId = searchParams.get('analysisId');
+        const level = searchParams.get('level') || 'operational';
 
         if (!analysisId) {
             return NextResponse.json({ error: 'Missing analysisId' }, { status: 400 });
@@ -153,6 +170,10 @@ export async function GET(request: Request) {
         if (!analysis) {
             return NextResponse.json({ error: 'Analysis not found' }, { status: 404 });
         }
+
+        // Try to get the AI-generated report content for this level
+        const Report = (await import('@/models/Report')).default;
+        const savedReport = await Report.findOne({ analysisId, level }).lean() as any;
 
         const allAnalyses = [
             ...(analysis.operational || []),
@@ -166,13 +187,15 @@ export async function GET(request: Request) {
             date: analysis.createdAt,
             analyses: allAnalyses,
             summary: analysis.summary,
+            level,
+            reportContent: savedReport?.content || null,
         });
 
         return new NextResponse(new Uint8Array(pdfBuffer), {
             status: 200,
             headers: {
                 'Content-Type': 'application/pdf',
-                'Content-Disposition': `attachment; filename="risk-report-${analysisId}.pdf"`,
+                'Content-Disposition': `attachment; filename="${analysis.company}-${level}-report.pdf"`,
                 'Cache-Control': 'no-store',
             },
         });

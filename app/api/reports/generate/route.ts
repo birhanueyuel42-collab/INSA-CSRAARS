@@ -3,7 +3,7 @@ import { getSession } from "@/lib/auth";
 import dbConnect from "@/lib/mongodb";
 import RiskAnalysis from "@/models/RiskAnalysis";
 import Report from "@/models/Report";
-import { generateReport } from "@/lib/ai";
+import { generateReport, parseReportIntoSlides } from "@/lib/ai";
 
 export async function POST(req: NextRequest) {
   try {
@@ -41,10 +41,10 @@ export async function POST(req: NextRequest) {
     // Check if report already exists for this level — delete and regenerate with latest prompt
     await Report.deleteOne({ analysisId: analysis._id, level });
 
-    // Check if OpenAI API key is configured
-    if (!process.env.OPENAI_API_KEY) {
+    // Check if AI API key is configured
+    if (!process.env.OPENAI_API_KEY && !process.env.OPENROUTER_API_KEY) {
       return NextResponse.json(
-        { error: "OpenAI API key not configured" },
+        { error: "AI API key not configured" },
         { status: 500 }
       );
     }
@@ -77,9 +77,13 @@ export async function POST(req: NextRequest) {
 
     const savedReport = await report.save();
 
+    // Parse into slides for the online reader
+    const slides = parseReportIntoSlides(reportResult.content, level);
+
     return NextResponse.json({
       success: true,
       report: savedReport,
+      slides,
     });
   } catch (error: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
     console.error("Error generating report:", error);
